@@ -62,8 +62,8 @@ class AssetsUpload(Resource):
             fileParse = []
             for key in request.files.keys():
                 fileParse.append((key, (request.files[key].filename, request.files[key].read(), request.files[key].content_type)))
-            url = f'{os.environ.get("SSO_URL")}/internal/assets_upload'
-            # url = 'http://localhost:5001/internal/assets_upload'
+            # url = f'{os.environ.get("SSO_URL")}/internal/assets_upload'
+            url = 'https://auth.insaba.co.id/internal/assets_upload'
             logger.debug(f'assets_upload to sso {url} begin ....')
             req = requests.post(url, headers={
                 "Origin": request.origin,
