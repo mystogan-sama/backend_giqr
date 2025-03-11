@@ -33,7 +33,7 @@ respAndPayloadFields = {
 uniqueField = []
 searchField = ["NMASET","NMUNIT"]
 sortField = []
-filterField = ["UNITKEY", "NMASET","NMUNIT","ASETKEY", "IDBRG"]
+filterField = ["UNITKEY", "NMASET","NMUNIT","ASETKEY", "IDBRG", "NOFIKAT"]
 enabledPagination = True
 fileFields = []
 

@@ -67,6 +67,24 @@ class List(Resource):
                                 JNSKIB 
                             WHERE 
                                 KDKIB IN ('01','03', '04')"""
+        elif args.get("jnsBrgGIS") == '2':
+            # Your SQL query with ROW_NUMBER
+            sql_query = """SELECT
+                                ak.id,
+                                ak.parent_id,
+                                ak.kode,
+                                ak.nama,
+                                ak.kd_level,
+                                ak.masa_manfaat,
+                                ak.nilai_klasifikasi,
+                                ak.attributes,
+                                ak.created_by,
+                                ak.created_date,
+                                ak.updated_by,
+                                ak.updated_date
+                            FROM
+                                asetKategori AS ak
+                            WHERE ak.parent_id IN (488, 14343)"""
         elif args.get("jnsBrgQR") == '1':
             # Your alternative SQL query
             sql_query = """SELECT 
@@ -76,6 +94,24 @@ class List(Resource):
                                 GOLKIB 
                             FROM 
                                 JNSKIB"""
+        elif args.get("jnsBrgQR") == '2':
+            # Your SQL query with ROW_NUMBER
+            sql_query = """SELECT
+                                ak.id,
+                                ak.parent_id,
+                                ak.kode,
+                                ak.nama,
+                                ak.kd_level,
+                                ak.masa_manfaat,
+                                ak.nilai_klasifikasi,
+                                ak.attributes,
+                                ak.created_by,
+                                ak.created_date,
+                                ak.updated_by,
+                                ak.updated_date
+                            FROM
+                                asetKategori AS ak
+                            WHERE ak.parent_id IN (488, 14343)"""
 
         else:
             # Handle the case when neither jnsBrgGIS nor jnsBrgQR is provided
@@ -87,9 +123,11 @@ class List(Resource):
 
         # Execute the query with parameters
         result = db.session.execute(sql_query)
+        print(result)
 
         # Fetch the results
         rows = result.fetchall()
+        print(rows)
 
         # Convert rows to a list of dictionaries (JSON-like)
         data = [dict(row) for row in rows]
@@ -108,7 +146,7 @@ class List(Resource):
             "message": "data sent",
             "page": 1,
             "pages": 1,
-            "per_page": 10,
+            "per_page": 20,
             "total": len(data),
             "has_next": False,
             "next_num": None,

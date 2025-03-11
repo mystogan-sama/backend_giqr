@@ -1,7 +1,7 @@
 import decimal
 import json
 import math
-from cgitb import text
+from sqlalchemy.sql import text as sqlalchemy_text
 from datetime import datetime
 
 
@@ -50,19 +50,17 @@ class List(Resource):
         parser.add_argument('getDaftAset', type=str, required=True, help='Your help message for getDaftAset')
         parser.add_argument('KDKIB', type=str)
         parser.add_argument('UNITKEY', type=str)
+        parser.add_argument('kd_jenis', type=str)
+        parser.add_argument('id_unit', type=str)
         args = parser.parse_args()
 
-        if args.get("getDaftAset") == '1' and args['KDKIB'] and args['UNITKEY']:
-            # Assuming you have a SQLAlchemy model named JNSKIB
-            # and a session named db
+        # Helper function to process query results
+        def process_query_result(result):
+            # Check if result is empty
+            if result.rowcount == 0:
+                return []  # Return an empty list if no rows are found
 
-            # Your SQL query with ROW_NUMBER
-            sql_query = """EXEC GET_DAFTASET @KDKIB=:kdkib, @UNITKEY=:unitkey"""
-
-            # Execute the query with parameters
-            result = db.session.execute(sql_query, {'kdkib': args['KDKIB'], 'unitkey': args['UNITKEY']})
-
-            # Fetch the results
+            # Otherwise, fetch the results
             rows = result.fetchall()
 
             # Convert rows to a list of dictionaries (JSON-like)
@@ -76,7 +74,14 @@ class List(Resource):
                     elif isinstance(value, decimal.Decimal):
                         item[key] = float(value)
 
-            # Return the data
+            return data
+
+        # Handle 'getDaftAset' == '1'
+        if args.get("getDaftAset") == '1' and args['KDKIB'] and args['UNITKEY']:
+            sql_query = """EXEC GET_DAFTASET @KDKIB=:kdkib, @UNITKEY=:unitkey"""
+            result = db.session.execute(sql_query, {'kdkib': args['KDKIB'], 'unitkey': args['UNITKEY']})
+            data = process_query_result(result)
+
             response = {
                 "status": True,
                 "message": "data sent",
@@ -89,11 +94,52 @@ class List(Resource):
                 "prev_num": None,
                 "data": data
             }
-
-            # Return the data
             return response, 200
-        else:
-            return {'message': 'Invalid parameters'}, 400
+
+        elif args.get("getDaftAset") == '2' and args.get('kd_jenis') and args.get('id_unit'):
+            id_unit = int(args.get("id_unit"))
+            kd_jenis = str(args.get("kd_jenis"))
+
+            # SQL Query dengan penamaan parameter yang sesuai
+            sql_query = "EXEC lookup_asetForQr @id_unit=4010003223715, @kd_jenis='1.3.1'"
+
+            try:
+                # Menjalankan query dengan parameter yang benar
+                # result = db.session.execute(sql_query, {"id_unit": id_unit, "kd_jenis": kd_jenis})
+                result = db.session.execute(sql_query)
+                print(result)
+                rows = result.fetchall()
+                print(rows)
+                # Cek apakah hasil query kosong
+                if not result.returns_rows:
+                    return {'message': 'No rows returned from the stored procedure'}, 200
+
+                # Proses data hasil query
+                data = []
+                for rowproxy in result:
+                    row_dict = {}
+                    for column, value in rowproxy.items():
+                        if isinstance(value, datetime):
+                            row_dict[column] = value.isoformat()
+                        elif isinstance(value, decimal.Decimal):
+                            row_dict[column] = float(value)
+                        else:
+                            row_dict[column] = value
+                    data.append(row_dict)
+
+                # Persiapkan response
+                resp = message(True, generateDefaultResponse(crudTitle, 'get-list', 200))
+                resp['data'] = data
+                return resp, 200
+
+            except Exception as e:
+                # Tangani error
+                return {'message': f"Error executing stored procedure: {str(e)}"}, 500
+
+        # Invalid parameters
+        return {'message': 'Invalid parameters'}, 400
+
+
 
 #### BY ID
 @api.route("/<int:id>")

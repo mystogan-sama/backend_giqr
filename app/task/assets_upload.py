@@ -1,28 +1,20 @@
 import copy
-import json
 import os
 
-import cloudinary.uploader
 import cloudinary.api
+import cloudinary.uploader
 import requests
 import sqlalchemy
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required
+from flask_restx import Namespace, fields
 from flask_restx import Resource
+from marshmallow import Schema, fields as fields2
+from marshmallow.validate import Length
 
 from app import db
-# from app.models.users.user import User
-# from app.task.admin_confirm_reg_dto_schema import AdminConfirmRegDto, AdminConfirmRegSchema
-# from app.task.admin_confirm_reg_service import AdminConfirmRegService
-# from app.api.Contacts.model import Employee
-from app.sso_helper import token_required
-from app.task.utils import auth_internal_header
-from app.utils import validation_error, appName, appFrontWebLogo, appFrontWebUrl, logger, message, internal_err_resp, \
+from app.utils import logger, message, internal_err_resp, \
     get_model, error_response
-
-from flask_restx import Namespace, fields
-from marshmallow import Schema, fields as fields2
-from marshmallow.validate import Regexp, Length
 
 
 class AssetsUploadSchema(Schema):
@@ -62,24 +54,21 @@ class AssetsUpload(Resource):
             fileParse = []
             for key in request.files.keys():
                 fileParse.append((key, (request.files[key].filename, request.files[key].read(), request.files[key].content_type)))
-            # url = f'{os.environ.get("SSO_URL")}/internal/assets_upload'
-            url = 'https://auth.insaba.co.id/internal/assets_upload'
-            logger.debug(f'assets_upload to sso {url} begin ....')
+            url = f'{os.environ.get("SSO_URL")}/internal/assets_upload'
+            # url = 'http://localhost:5001/internal/assets_upload'
+            # logger.debug(f'assets_upload to sso {url} begin ....')
             req = requests.post(url, headers={
                 "Origin": request.origin,
                 "Authorization": request.headers['Authorization'],
             }, files=fileParse, data=payload)
-
             if req.status_code != 200:
                 logger.error(f'assets_upload to sso {url} FAILED!!!')
                 logger.error(f'Response From sso => {str(req.status_code)} {req.reason} {req.json()}')
                 response = jsonify(req.json())
                 response.status_code = req.status_code
                 return response
-
             logger.debug(f'assets_upload to sso {url} success')
             responseJson = req.json()
-
             # print(responseJson)
             if responseJson:
                 table_id = copy.copy(payload['table_id'])
@@ -90,7 +79,6 @@ class AssetsUpload(Resource):
                         table = model.__table__
                         update = sqlalchemy.update(table).filter_by(id=int(table_id)).values(**responseJson['data']['file_path'])
                         conn.execute(update)
-
             resp = message(True, success_resp)
             return resp, 200
         except Exception as e:
